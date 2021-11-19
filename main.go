@@ -448,6 +448,9 @@ func main() {
 
 	router.GET("/ping/:chatid", GET_Handling)
 	router.POST("/alert/:chatid", POST_Handling)
+	router.GET("/healthz", func(c *gin.Context) {
+		c.String(200, "OK")
+	})
 	router.Run(*listen_addr)
 }
 
@@ -627,10 +630,8 @@ func POST_Handling(c *gin.Context) {
 	}
 	for _, subString := range SplitString(msgtext, cfg.SplitMessageBytes) {
 
-		sanitizedString := SanitizeMsg(subString)
-
-		msg := tgbotapi.NewMessage(chatid, sanitizedString)
-		msg.ParseMode = tgbotapi.ModeHTML
+		msg := tgbotapi.NewMessage(chatid, subString)
+		msg.ParseMode = tgbotapi.ModeMarkdown
 
 		// Print in Log result message
 		log.Println("+---------------  F I N A L   M E S S A G E  ---------------+")

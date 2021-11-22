@@ -363,23 +363,25 @@ func loadTemplate(tmplPath string) *template.Template {
 	return tmpH
 }
 
-func SplitString(s string, n int) []string {
-	sub := ""
-	subs := []string{}
-
-	runes := bytes.Runes([]byte(s))
-	l := len(runes)
-	for i, r := range runes {
-		sub = sub + string(r)
-		if (i+1)%n == 0 {
-			subs = append(subs, sub)
-			sub = ""
-		} else if (i + 1) == l {
-			subs = append(subs, sub)
-		}
-	}
-
-	return subs
+func splitMessage(str string) []string {
+  restString := str
+  stringSet := []string{}
+  for {
+    if len(restString) > 4095 {
+      i := strings.LastIndex(restString[0:4086], "\n\n")
+      if i > 1 {
+        stringSet = append(stringSet, restString[0:i] + "\n_split_")
+        restString = restString[i:]
+      } else {
+        log.Print("Unable to find the end of last alert (can't split splitMessage).")
+        break
+      }
+    } else {
+      stringSet = append(stringSet, restString)
+      break
+    }
+  }
+  return stringSet
 }
 
 func main() {
@@ -628,7 +630,7 @@ func POST_Handling(c *gin.Context) {
 	} else {
 		msgtext = AlertFormatTemplate(alerts)
 	}
-	for _, subString := range SplitString(msgtext, cfg.SplitMessageBytes) {
+	for _, subString := range splitMessage(msgtext) {
 
 		msg := tgbotapi.NewMessage(chatid, subString)
 		msg.ParseMode = tgbotapi.ModeMarkdown
